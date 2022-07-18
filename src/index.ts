@@ -5,7 +5,7 @@ export type Response = NextResponse;
 
 export type FinalResponse = {
   res: Response;
-  _final: true;
+  final: true;
 };
 export type PipeableMiddleware = (
   req: Request,
@@ -35,8 +35,8 @@ export const pipeMiddleware: PipeMiddleware = async (req, res, middlewares) => {
   }
 
   const result = await middleware(req, res);
-  if ('_final' in result) {
-    return result._final ? result.res : pipeMiddleware(req, res, rest);
+  if ('final' in result) {
+    return result.final ? result.res : pipeMiddleware(req, res, rest);
   }
 
   return pipeMiddleware(req, result, rest);

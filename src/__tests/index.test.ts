@@ -16,7 +16,7 @@ const m3 = vi.fn(async (req, res) => {
   return { ...res, baz: 'baz' };
 });
 const mFinal = vi.fn(async (req, res) => {
-  return { res, _final: true };
+  return { res, final: true };
 });
 
 describe('pipeMiddleware', () => {
