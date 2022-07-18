@@ -1,0 +1,23 @@
+{
+  "name": "next-pipe-middleware",
+  "version": "0.0.3",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc",
+    "preview": "vite preview",
+    "test": "vitest",
+    "prepublishOnly": "yarn build"
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "typescript": "^4.6.4",
+    "vite": "^3.0.0",
+    "vitest": "^0.18.1"
+  },
+  "license": "MIT"
+}
