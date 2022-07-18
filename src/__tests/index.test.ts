@@ -45,17 +45,17 @@ describe('pipeMiddleware', () => {
   });
 
   it('should not execute middleware with unmatched path', async () => {
-    const req = { nextUrl: { pathname: '/top' } } as FooRequest;
+    const req = { nextUrl: { pathname: '/bar' } } as FooRequest;
     const res = {} as NextResponse;
 
     expect(
       await pipeMiddleware(req, res, [
-        m1,
-        [m2, { matcher: (path) => path === '/top' }],
+        [m1, { matcher: (path) => path === '/foo' }],
+        [m2, { matcher: (path) => path === '/bar' }],
         m3,
       ])
     ).toEqual({
-      foo: 'foo',
+      bar: 'bar',
       baz: 'baz',
     });
   });

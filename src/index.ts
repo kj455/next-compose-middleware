@@ -30,7 +30,10 @@ export const pipeMiddleware: PipeMiddleware = async (req, res, middlewares) => {
   const [middleware, nextMiddlewareOption] =
     typeof next === 'function' ? [next, null] : [next[0], next[1]];
 
-  if (nextMiddlewareOption?.matcher?.(req.nextUrl.pathname)) {
+  if (
+    nextMiddlewareOption?.matcher &&
+    nextMiddlewareOption.matcher(req.nextUrl.pathname) === false
+  ) {
     return pipeMiddleware(req, res, rest);
   }
 
