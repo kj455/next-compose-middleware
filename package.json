@@ -18,6 +18,11 @@
     "vite": "^3.0.0",
     "vitest": "^0.18.1"
   },
+  "keywords": [
+    "next.js",
+    "middleware",
+    "edge"
+  ],
   "license": "MIT",
   "dependencies": {}
 }
