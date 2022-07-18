@@ -93,7 +93,7 @@ export default async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const success = await basicAuthMiddleware(req, res);
   if (!success) {
-    return res;
+    return NextResponse.rewrite(new URL('/api/basic-auth', req.url))
   }
 
   if (req.url.startsWith('/secret')) {
