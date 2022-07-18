@@ -1,13 +1,11 @@
 {
   "name": "next-pipe-middleware",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "dev": "vite",
     "build": "rm -rf dist && tsc",
-    "preview": "vite preview",
     "test": "vitest",
     "prepublishOnly": "yarn build"
   },

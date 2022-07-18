@@ -1,23 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export type Request = NextRequest;
+export type Response = NextResponse;
+
 export type FinalResponse = {
-  res: NextResponse;
+  res: Response;
   _final: true;
 };
 export type PipeableMiddleware = (
-  req: NextRequest,
-  res: NextResponse
-) => Promise<NextResponse | FinalResponse>;
+  req: Request,
+  res: Response
+) => Promise<Response | FinalResponse>;
 
 type Option = {
   matcher?: (path: string) => boolean | Promise<boolean>;
 };
 
 type PipeMiddleware = (
-  req: NextRequest,
-  res: NextResponse,
+  req: Request,
+  res: Response,
   middlewares: (PipeableMiddleware | [PipeableMiddleware, Option])[]
-) => Promise<NextResponse>;
+) => Promise<Response>;
 
 export const pipeMiddleware: PipeMiddleware = async (req, res, middlewares) => {
   if (middlewares.length === 0) {
