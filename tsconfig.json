@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ES5",
+    "target": "ES2015",
     "module": "commonjs",
     "useDefineForClassFields": true,
     "outDir": "./dist",
     "declaration": true,
-    "lib": ["ES2015", "DOM"],
     "moduleResolution": "Node",
     "strict": true,
     "sourceMap": true,
@@ -17,5 +16,9 @@
     "noImplicitReturns": true,
     "skipLibCheck": true
   },
-  "include": ["./src/*"]
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts"
+  ],
 }
