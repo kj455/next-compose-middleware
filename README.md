@@ -76,6 +76,9 @@ export default async function middleware(req: NextRequest) {
 
 
 ## 📖 Appendix
+
+[Demo](https://codesandbox.io/s/next-pipe-middleware-w9rvlh?file=/middleware.ts)
+
 <details>
 <summary>Motivation</summary>
 
