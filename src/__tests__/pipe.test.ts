@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { m1, m2, m3, mBreakOnce } from '../mocks/middleware';
+import { m1, m2, m3, mBreakAll, mBreakOnce } from '../mocks/middleware';
 import { pipe } from '../pipe';
-import { stateHandler } from '../state';
+import { createStore } from '../store';
 import { Request, Response } from '../types';
 
 describe('pipe', async () => {
+  const store = createStore();
   beforeEach(() => {
-    stateHandler.dispatch({ type: 'reset' });
+    store.dispatch({ type: 'reset' });
     vi.clearAllMocks();
   });
 
@@ -14,7 +15,7 @@ describe('pipe', async () => {
     const req = {} as Request;
     const res = {} as Response;
 
-    expect(await pipe(req, res, [m1, m2, m3], stateHandler)).toEqual({
+    expect(await pipe(req, res, [m1, m2, m3], store)).toEqual({
       m1: 'm1',
       m2: 'm2',
       m3: 'm3',
@@ -24,36 +25,23 @@ describe('pipe', async () => {
     expect(m3).toHaveBeenCalledOnce();
   });
 
-  it('should terminate if `breakOnce` or `breakAll` is true', async () => {
+  it('should terminate if `breakOnce` is true', async () => {
     const req = {} as Request;
     const res = {} as Response;
 
-    expect(
-      await pipe(req, res, [m1, m2, mBreakOnce, m3], stateHandler)
-    ).toEqual({
+    expect(await pipe(req, res, [m1, m2, mBreakOnce, m3], store)).toEqual({
       m1: 'm1',
       m2: 'm2',
     });
   });
 
-  it('should not execute middleware with unmatched path', async () => {
-    const req = { nextUrl: { pathname: '/bar' } } as Request;
+  it('should terminate if `breakAll` is true', async () => {
+    const req = {} as Request;
     const res = {} as Response;
 
-    expect(
-      await pipe(
-        req,
-        res,
-        [
-          [m1, { matcher: (req) => req.nextUrl.pathname === '/foo' }],
-          [m2, { matcher: (req) => req.nextUrl.pathname === '/bar' }],
-          m3,
-        ],
-        stateHandler
-      )
-    ).toEqual({
+    expect(await pipe(req, res, [m1, m2, mBreakAll, m3], store)).toEqual({
+      m1: 'm1',
       m2: 'm2',
-      m3: 'm3',
     });
   });
 });

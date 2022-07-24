@@ -1,5 +1,6 @@
+import { findPathValue, getDividedPaths, Path, toPath } from './path';
 import { pipe } from './pipe';
-import { stateHandler, StateHandler } from './state';
+import { createStore, Store } from './store';
 import { Request, Response } from './types';
 
 type ComposeMiddleware = (
@@ -8,12 +9,10 @@ type ComposeMiddleware = (
   option: ComposeOption
 ) => Promise<Response>;
 
-type ComposeOption = {
-  scripts: Middleware[];
-  [path: Path]: Middleware[] | ComposeOption;
+export type ComposeOption = {
+  scripts: ComposableMiddleware[];
+  [path: Path]: ComposableMiddleware[] | ComposeOption;
 };
-
-export type Middleware = ComposableMiddleware | [ComposableMiddleware, Option];
 
 export type ComposableMiddleware = (
   req: Request,
@@ -23,62 +22,20 @@ export type ComposableMiddleware = (
     breakAll: (res: Response) => Response;
   }
 ) => Promise<Response>;
-type Option = {
-  matcher?: (req: Request) => boolean | Promise<boolean>;
-};
 
 type Compose = (
   req: Request,
   res: Response,
   option: ComposeOption,
-  stateHandler: StateHandler
+  store: Store
 ) => Promise<Response>;
 
-type Path = `/${string}`;
-
-export const getPathList = (path: string): string[] => {
-  const exceptHeadEmpty = path.split('/').slice(1);
-  const exceptTailEmpty =
-    exceptHeadEmpty.at(-1) === ''
-      ? exceptHeadEmpty.slice(0, -1)
-      : exceptHeadEmpty;
-  return exceptTailEmpty;
-};
-
-export const toPath = (path: string): Path => {
-  return path.startsWith('/') ? (path as Path) : `/${path}`;
-};
-
-export const isDynamicPath = (path: string): boolean => {
-  const dynamicPathregex = /^\/\[\w+\]$/;
-  return dynamicPathregex.test(path);
-};
-
-export const findPathValue = (
-  pathMap: Omit<ComposeOption, 'scripts'>,
-  path: Path
-): Middleware[] | ComposeOption | null => {
-  const value = pathMap[path];
-  if (value) {
-    return value;
-  }
-
-  const found = Object.keys(pathMap).find((key) => isDynamicPath(key));
-  const dynamicPath = found ? toPath(found) : null;
-
-  if (dynamicPath === null) {
-    return null;
-  }
-  return pathMap[dynamicPath] ?? null;
-};
-
-export const composeMain: Compose = async (req, res, option, handler) => {
-  const { getState, dispatch } = handler;
+export const composeMain: Compose = async (req, res, option, store) => {
   const { scripts, ...pathMap } = option;
 
-  const result = await pipe(req, res, scripts, handler);
+  const result = await pipe(req, res, scripts, store);
 
-  const { path, brokenAll } = getState();
+  const { brokenAll, path } = store.getState();
   if (brokenAll) {
     return result;
   }
@@ -95,21 +52,22 @@ export const composeMain: Compose = async (req, res, option, handler) => {
 
   const isMiddlewareArray = 'length' in nextValue;
   if (isMiddlewareArray) {
-    return pipe(req, res, nextValue, handler);
+    return pipe(req, res, nextValue, store);
   }
 
-  dispatch({ type: 'setPath', payload: restPath });
-  return composeMain(req, result, nextValue, handler);
+  store.dispatch({ type: 'setPath', payload: restPath });
+  return composeMain(req, result, nextValue, store);
 };
 
-export const compose: Compose = async (req, res, option, handler) => {
-  handler.dispatch({
+export const compose: Compose = async (req, res, option, store) => {
+  store.dispatch({
     type: 'setPath',
-    payload: getPathList(req.nextUrl.pathname),
+    payload: getDividedPaths(req.nextUrl.pathname),
   });
-  return composeMain(req, res, option, handler);
+  return composeMain(req, res, option, store);
 };
 
 export const composeMiddleware: ComposeMiddleware = (req, res, option) => {
-  return compose(req, res, option, stateHandler);
+  const store = createStore();
+  return compose(req, res, option, store);
 };

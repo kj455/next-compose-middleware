@@ -1,11 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import {
-  compose,
-  findPathValue,
-  getPathList,
-  isDynamicPath,
-  toPath,
-} from '../compose';
+import { compose } from '../compose';
 import {
   m1,
   m2,
@@ -17,56 +11,13 @@ import {
   mBreakAll,
   mBreakOnce,
 } from '../mocks/middleware';
-import { stateHandler } from '../state';
+import { createStore } from '../store';
 import { Request, Response } from '../types';
 
-describe('getPathList', () => {
-  test.each([
-    ['/', []],
-    ['/foo', ['foo']],
-    ['/foo/bar', ['foo', 'bar']],
-    ['/foo/bar/', ['foo', 'bar']],
-  ])('getPathList(%s)', (pathname, expected) => {
-    expect(getPathList(pathname)).toEqual(expected);
-  });
-});
-
-describe('toPath', () => {
-  test.each([
-    ['', '/'],
-    ['foo', '/foo'],
-    ['foo/bar', '/foo/bar'],
-    ['/foo/bar', '/foo/bar'],
-  ])('toPath(%s)', (str, expected) => {
-    expect(toPath(str)).toEqual(expected);
-  });
-});
-
-describe('isDynamicPath', () => {
-  test.each([
-    ['/', false],
-    ['/foo', false],
-    ['/[id]', true],
-    ['/[fooBar]', true],
-  ])('isDynamicPath(%s)', (pathname, expected) => {
-    expect(isDynamicPath(pathname)).toEqual(expected);
-  });
-});
-
-describe('findPathValue', () => {
-  test.each([
-    [{ '/foo': [], '/bar': {} }, '/foo', []],
-    [{ '/foo': [], '/bar': {} }, '/baz', null],
-    [{ '/[id]': [], '/bar': {} }, '/qux', []],
-  ])('findPathValue(%s)', (pathMap, path, expected) => {
-    // @ts-expect-error
-    expect(findPathValue(pathMap, path)).toEqual(expected);
-  });
-});
-
 describe('composeMiddleware', () => {
+  const store = createStore();
   beforeEach(() => {
-    stateHandler.dispatch({ type: 'reset' });
+    store.dispatch({ type: 'reset' });
     vi.clearAllMocks();
   });
 
@@ -79,7 +30,7 @@ describe('composeMiddleware', () => {
         req,
         res,
         {
-          scripts: [m1, [m2, { matcher: (req) => false }], m3],
+          scripts: [m1, m2, m3],
           '/foo': {
             scripts: [m4],
             '/[id]': {
@@ -91,17 +42,18 @@ describe('composeMiddleware', () => {
           },
           '/bar': [m7],
         },
-        stateHandler
+        store
       )
     ).toEqual({
       m1: 'm1',
+      m2: 'm2',
       m3: 'm3',
       m4: 'm4',
       m5: 'm5',
       m6: 'm6',
     });
     expect(m1).toHaveBeenCalledTimes(1);
-    expect(m2).toHaveBeenCalledTimes(0);
+    expect(m2).toHaveBeenCalledTimes(1);
     expect(m3).toHaveBeenCalledTimes(1);
     expect(m4).toHaveBeenCalledTimes(1);
     expect(m5).toHaveBeenCalledTimes(1);
@@ -124,7 +76,7 @@ describe('composeMiddleware', () => {
           },
           '/bar': [m4],
         },
-        stateHandler
+        store
       )
     ).toEqual({
       m1: 'm1',
@@ -150,7 +102,7 @@ describe('composeMiddleware', () => {
           },
           '/bar': [m4],
         },
-        stateHandler
+        store
       )
     ).toEqual({
       m1: 'm1',

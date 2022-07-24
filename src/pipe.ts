@@ -1,33 +1,27 @@
-import type { Middleware } from './compose';
-import { StateHandler, stateHandler } from './state';
+import { ComposableMiddleware } from './compose';
+import { createStore, Store } from './store';
 import { Request, Response } from './types';
 
 export type PipeMiddleware = (
   req: Request,
   res: Response,
-  middlewares: Middleware[]
+  middlewares: ComposableMiddleware[]
 ) => Promise<Response>;
 
 type Pipe = (
   req: Request,
   res: Response,
-  middlewares: Middleware[],
-  stateHandler: StateHandler
+  middlewares: ComposableMiddleware[],
+  store: Store
 ) => Promise<Response>;
 
-export const pipe: Pipe = async (req, res, middlewares, handler) => {
-  const [next, ...rest] = middlewares;
-  if (next === undefined) {
+export const pipe: Pipe = async (req, res, middlewares, store) => {
+  const [middleware, ...rest] = middlewares;
+  if (middleware === undefined) {
     return res;
   }
-  const [middleware, option] =
-    typeof next === 'function' ? [next, null] : [next[0], next[1]];
 
-  if (option?.matcher && !option.matcher(req)) {
-    return pipe(req, res, rest, handler);
-  }
-
-  const { getState, dispatch } = handler;
+  const { getState, dispatch } = store;
   const result = await middleware(req, res, {
     breakOnce: (res) => {
       dispatch({ type: 'breakOnce' });
@@ -44,8 +38,11 @@ export const pipe: Pipe = async (req, res, middlewares, handler) => {
     return result;
   }
 
-  return pipe(req, result, rest, handler);
+  return pipe(req, result, rest, store);
 };
 
-export const pipeMiddleware: PipeMiddleware = (req, res, middlewares) =>
-  pipe(req, res, middlewares, stateHandler);
+/** @deprecated should use composeMiddleware */
+export const pipeMiddleware: PipeMiddleware = (req, res, middlewares) => {
+  const store = createStore();
+  return pipe(req, res, middlewares, store);
+};

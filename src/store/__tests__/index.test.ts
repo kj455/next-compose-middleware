@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { reducer, stateHandler } from '../index';
+import { createStore, reducer } from '../index';
 
 describe('state', () => {
   const initialState = { path: [], brokenOnce: false, brokenAll: false };
@@ -34,7 +34,7 @@ describe('state', () => {
   });
 
   describe('dispatch', () => {
-    const { getState, dispatch } = stateHandler;
+    const { getState, dispatch } = createStore();
 
     test('should mutate state', () => {
       expect(getState()).toEqual(initialState);

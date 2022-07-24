@@ -10,8 +10,6 @@ const initialState: State = {
   brokenAll: false,
 };
 
-let currentState = initialState;
-
 type Action =
   | {
       type: 'setPath';
@@ -51,17 +49,18 @@ export const reducer = (state = initialState, action: Action) => {
   }
 };
 
-const dispatch = (action: Action) => {
-  currentState = reducer(currentState, action);
-  return action;
-};
-
-export type StateHandler = {
+export type Store = {
   getState: () => State;
   dispatch: (action: Action) => Action;
 };
 
-export const stateHandler = {
-  getState: () => currentState,
-  dispatch,
+export const createStore = () => {
+  let state = initialState;
+  return {
+    getState: () => state,
+    dispatch: (action: Action) => {
+      state = reducer(state, action);
+      return action;
+    },
+  };
 };
