@@ -1,9 +1,9 @@
-# 🧵 Next Pipe Middleware
+# 🧵 Next Compose Middleware
 
 This is a library for building Next.js complex middleware declaratively.
 You can create highly readable and manageable middleware by composing multiple functions together.
 
-
+å
 ## 🌟 Features
 - Path-based middleware execution (like "Nested Middleware")
 - Composition of functions divided by interest (including early exit)
