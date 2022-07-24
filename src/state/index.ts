@@ -1,19 +1,40 @@
 type State = {
+  path: string[];
   brokenOnce: boolean;
   brokenAll: boolean;
 };
 
 const initialState: State = {
+  path: [],
   brokenOnce: false,
   brokenAll: false,
 };
 
 let currentState = initialState;
 
-type Action = 'breakOnce' | 'breakAll' | 'reset';
+type Action =
+  | {
+      type: 'setPath';
+      payload: string[];
+    }
+  | {
+      type: 'breakOnce';
+    }
+  | {
+      type: 'breakAll';
+    }
+  | {
+      type: 'reset';
+    };
+// type Action = 'setPath' | 'breakOnce' | 'breakAll' | 'reset';
 
 export const reducer = (state = initialState, action: Action) => {
-  switch (action) {
+  switch (action.type) {
+    case 'setPath':
+      return {
+        ...state,
+        path: action.payload,
+      };
     case 'breakOnce':
       return {
         ...state,

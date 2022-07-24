@@ -2,25 +2,34 @@ import { describe, expect, test } from 'vitest';
 import { reducer, stateHandler } from '../index';
 
 describe('state', () => {
-  describe('reducer', () => {
-    const initialState = { brokenOnce: false, brokenAll: false };
+  const initialState = { path: [], brokenOnce: false, brokenAll: false };
 
-    test('breakOnce', () => {
-      expect(reducer(initialState, 'breakOnce')).toEqual({
-        brokenOnce: true,
-        brokenAll: false,
+  describe('reducer', () => {
+    test('setPath', () => {
+      expect(
+        reducer(initialState, { type: 'setPath', payload: ['foo'] })
+      ).toEqual({
+        ...initialState,
+        path: ['foo'],
       });
     });
 
     test('breakOnce', () => {
-      expect(reducer(initialState, 'breakAll')).toEqual({
-        brokenOnce: false,
+      expect(reducer(initialState, { type: 'breakOnce' })).toEqual({
+        ...initialState,
+        brokenOnce: true,
+      });
+    });
+
+    test('breakOnce', () => {
+      expect(reducer(initialState, { type: 'breakAll' })).toEqual({
+        ...initialState,
         brokenAll: true,
       });
     });
 
     test('reset', () => {
-      expect(reducer(initialState, 'reset')).toEqual(initialState);
+      expect(reducer(initialState, { type: 'reset' })).toEqual(initialState);
     });
   });
 
@@ -28,19 +37,23 @@ describe('state', () => {
     const { getState, dispatch } = stateHandler;
 
     test('should mutate state', () => {
-      expect(getState()).toEqual({ brokenOnce: false, brokenAll: false });
+      expect(getState()).toEqual(initialState);
 
-      dispatch('breakOnce');
+      dispatch({ type: 'breakOnce' });
 
-      expect(getState()).toEqual({ brokenOnce: true, brokenAll: false });
+      expect(getState()).toEqual({ ...initialState, brokenOnce: true });
 
-      dispatch('breakAll');
+      dispatch({ type: 'breakAll' });
 
-      expect(getState()).toEqual({ brokenOnce: true, brokenAll: true });
+      expect(getState()).toEqual({
+        ...initialState,
+        brokenOnce: true,
+        brokenAll: true,
+      });
 
-      dispatch('reset');
+      dispatch({ type: 'reset' });
 
-      expect(getState()).toEqual({ brokenOnce: false, brokenAll: false });
+      expect(getState()).toEqual(initialState);
     });
   });
 });
