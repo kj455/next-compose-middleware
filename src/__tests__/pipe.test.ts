@@ -2,24 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { pipe } from '../pipe';
 import { stateHandler } from '../state';
 import { Request, Response } from '../types';
-
-const m1 = vi.fn(async (req, res) => {
-  return { ...res, m1: 'm1' };
-});
-const m2 = vi.fn(async (req, res) => {
-  return { ...res, m2: 'm2' };
-});
-const m3 = vi.fn(async (req, res) => {
-  return { ...res, m3: 'm3' };
-});
-const mFinal = vi.fn(async (req, res, { breakOnce }) => {
-  breakOnce();
-  return res;
-});
+import { m1, m2, m3, mBreakOnce } from './mock';
 
 describe('pipe', async () => {
   beforeEach(() => {
-    stateHandler.dispatch('reset');
+    stateHandler.dispatch({ type: 'reset' });
     vi.clearAllMocks();
   });
 
@@ -41,7 +28,9 @@ describe('pipe', async () => {
     const req = {} as Request;
     const res = {} as Response;
 
-    expect(await pipe(req, res, [m1, m2, mFinal, m3], stateHandler)).toEqual({
+    expect(
+      await pipe(req, res, [m1, m2, mBreakOnce, m3], stateHandler)
+    ).toEqual({
       m1: 'm1',
       m2: 'm2',
     });

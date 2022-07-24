@@ -46,11 +46,11 @@ export const pipe: Pipe = async (req, res, middlewares, handler) => {
   const { getState, dispatch } = handler;
   const result = await middleware(req, res, {
     breakOnce: (res) => {
-      dispatch('breakOnce');
+      dispatch({ type: 'breakOnce' });
       return res;
     },
     breakAll: () => {
-      dispatch('breakAll');
+      dispatch({ type: 'breakAll' });
       return res;
     },
   });
