@@ -1,27 +1,27 @@
-import { pipe, PipeableMiddleware } from './pipe';
+import { MiddlewareArgType, pipe } from './pipe';
 import { stateHandler, StateHandler } from './state';
 import { Request, Response } from './types';
 
-export type NestMiddleware = (
+export type ComposeMiddleware = (
   req: Request,
   res: Response,
-  option: NestOpition
+  option: ComposeOpition
 ) => Promise<Response>;
 
-type Nest = (
+type Compose = (
   req: Request,
   res: Response,
-  option: NestOpition,
+  option: ComposeOpition,
   stateHandler: StateHandler
 ) => Promise<Response>;
 
-type NestOpition = {
-  scripts: PipeableMiddleware[];
+type ComposeOpition = {
+  scripts: MiddlewareArgType[];
   matcher?: (req: Request) => boolean | Promise<boolean>;
-  next?: NestOpition;
+  next?: ComposeOpition;
 };
 
-export const nest: Nest = async (req, res, option, handler) => {
+export const compose: Compose = async (req, res, option, handler) => {
   const { scripts, matcher, next } = option;
 
   if (matcher && !matcher(req)) {
@@ -36,9 +36,9 @@ export const nest: Nest = async (req, res, option, handler) => {
   }
 
   handler.dispatch('reset');
-  return next ? nest(req, result, next, handler) : result;
+  return next ? compose(req, result, next, handler) : result;
 };
 
-export const nestMiddleware: NestMiddleware = (req, res, option) => {
-  return nest(req, res, option, stateHandler);
+export const composeMiddleware: ComposeMiddleware = (req, res, option) => {
+  return compose(req, res, option, stateHandler);
 };

@@ -1,10 +1,14 @@
 import { StateHandler, stateHandler } from './state';
 import { Request, Response } from './types';
 
+export type MiddlewareArgType =
+  | PipeableMiddleware
+  | [PipeableMiddleware, Option];
+
 export type PipeMiddleware = (
   req: Request,
   res: Response,
-  middlewares: (PipeableMiddleware | [PipeableMiddleware, Option])[]
+  middlewares: MiddlewareArgType[]
 ) => Promise<Response>;
 
 type Option = {
@@ -23,7 +27,7 @@ export type PipeableMiddleware = (
 type Pipe = (
   req: Request,
   res: Response,
-  middlewares: (PipeableMiddleware | [PipeableMiddleware, Option])[],
+  middlewares: MiddlewareArgType[],
   stateHandler: StateHandler
 ) => Promise<Response>;
 

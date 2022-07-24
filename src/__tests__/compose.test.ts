@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { nest } from '../nest';
+import { compose } from '../compose';
 import { stateHandler } from '../state';
 import { Request, Response } from '../types';
 
@@ -18,33 +18,33 @@ const m4 = vi.fn(async (req, res) => {
 const m5 = vi.fn(async (req, res) => {
   return { ...res, m5: 'm5' };
 });
-const mbreakOnce = vi.fn(async (req, res, { breakOnce }) => {
+const mBreakOnce = vi.fn(async (req, res, { breakOnce }) => {
   return breakOnce(res);
 });
-const mbreakAll = vi.fn(async (req, res, { breakAll }) => {
+const mBreakAll = vi.fn(async (req, res, { breakAll }) => {
   return breakAll(res);
 });
 
-describe('nestMiddleware', () => {
+describe('composeMiddleware', () => {
   beforeEach(() => {
     stateHandler.dispatch('reset');
     vi.clearAllMocks();
   });
 
-  test('should execute all scripts', async () => {
+  test('should execute all scripts with matched path', async () => {
     const req = {} as Request;
     const res = {} as Response;
 
     expect(
-      await nest(
+      await compose(
         req,
         res,
         {
-          scripts: [m1, m2],
+          scripts: [m1, [m2, { matcher: (req) => false }], m3],
           next: {
-            scripts: [m3],
+            scripts: [m4],
             next: {
-              scripts: [m4, m5],
+              scripts: [m5],
             },
           },
         },
@@ -52,30 +52,55 @@ describe('nestMiddleware', () => {
       )
     ).toEqual({
       m1: 'm1',
-      m2: 'm2',
       m3: 'm3',
       m4: 'm4',
       m5: 'm5',
     });
     expect(m1).toHaveBeenCalledTimes(1);
-    expect(m2).toHaveBeenCalledTimes(1);
+    expect(m2).toHaveBeenCalledTimes(0);
     expect(m3).toHaveBeenCalledTimes(1);
     expect(m4).toHaveBeenCalledTimes(1);
     expect(m5).toHaveBeenCalledTimes(1);
   });
 
-  test.only('should skip remaining scripts if `brokenOnce` is true', async () => {
+  test('should not execute scripts if matcher returns false', () => {
+    const req = {} as Request;
+    const res = {} as Response;
+
+    compose(
+      req,
+      res,
+      {
+        scripts: [m1, m2, m3],
+        matcher: (req) => false,
+        next: {
+          scripts: [m4],
+          next: {
+            scripts: [m5],
+          },
+        },
+      },
+      stateHandler
+    );
+    expect(m1).toHaveBeenCalledTimes(0);
+    expect(m2).toHaveBeenCalledTimes(0);
+    expect(m3).toHaveBeenCalledTimes(0);
+    expect(m4).toHaveBeenCalledTimes(0);
+    expect(m5).toHaveBeenCalledTimes(0);
+  });
+
+  test('should skip remaining scripts if `brokenOnce` is true', async () => {
     const req = {} as Request;
     const res = {} as Response;
 
     expect(
-      await nest(
+      await compose(
         req,
         res,
         {
           scripts: [m1, m2],
           next: {
-            scripts: [mbreakOnce, m3],
+            scripts: [mBreakOnce, m3],
             next: {
               scripts: [m4, m5],
             },
@@ -96,18 +121,18 @@ describe('nestMiddleware', () => {
     expect(m5).toHaveBeenCalledTimes(1);
   });
 
-  test.only('should skip all remaining scripts if `brokenAll` is true', async () => {
+  test('should skip all remaining scripts if `brokenAll` is true', async () => {
     const req = {} as Request;
     const res = {} as Response;
 
     expect(
-      await nest(
+      await compose(
         req,
         res,
         {
           scripts: [m1, m2],
           next: {
-            scripts: [mbreakAll, m3],
+            scripts: [mBreakAll, m3],
             next: {
               scripts: [m4, m5],
             },
