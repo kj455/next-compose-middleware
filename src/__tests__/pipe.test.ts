@@ -1,46 +1,50 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { describe, it, expect, vi } from 'vitest';
-import {
-  PipeableMiddleware,
-  pipeMiddleware,
-  Request as FooRequest,
-} from '../index';
+import { NextResponse } from 'next/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { pipeMiddleware, Request as FooRequest } from '../index';
+import { stateHandler } from '../state';
 
 const m1 = vi.fn(async (req, res) => {
-  return { ...res, foo: 'foo' };
+  return { ...res, m1: 'm1' };
 });
 const m2 = vi.fn(async (req, res) => {
-  return { ...res, bar: 'bar' };
+  return { ...res, m2: 'm2' };
 });
 const m3 = vi.fn(async (req, res) => {
-  return { ...res, baz: 'baz' };
+  return { ...res, m3: 'm3' };
 });
-const mFinal = vi.fn(async (req, res) => {
-  return { res, final: true };
+const mFinal = vi.fn(async (req, res, { breakOnce }) => {
+  return breakOnce();
 });
 
-describe('pipeMiddleware', () => {
+describe('pipe', async () => {
+  beforeEach(() => {
+    stateHandler.dispatch('reset');
+    vi.clearAllMocks();
+  });
+
   it('should execute piped middlewares', async () => {
     const req = {} as FooRequest;
     const res = {} as NextResponse;
 
-    expect(await pipeMiddleware(req, res, [m1, m2, m3])).toEqual({
-      foo: 'foo',
-      bar: 'bar',
-      baz: 'baz',
+    expect(await pipeMiddleware(req, res, [m1, m2, m3], stateHandler)).toEqual({
+      m1: 'm1',
+      m2: 'm2',
+      m3: 'm3',
     });
     expect(m1).toHaveBeenCalledOnce();
     expect(m2).toHaveBeenCalledOnce();
     expect(m3).toHaveBeenCalledOnce();
   });
 
-  it('should terminate if given FinalResponse', async () => {
+  it('should terminate if undefined returned', async () => {
     const req = {} as FooRequest;
     const res = {} as NextResponse;
 
-    expect(await pipeMiddleware(req, res, [m1, m2, mFinal, m3])).toEqual({
-      foo: 'foo',
-      bar: 'bar',
+    expect(
+      await pipeMiddleware(req, res, [m1, m2, mFinal, m3], stateHandler)
+    ).toEqual({
+      m1: 'm1',
+      m2: 'm2',
     });
   });
 
@@ -49,14 +53,19 @@ describe('pipeMiddleware', () => {
     const res = {} as NextResponse;
 
     expect(
-      await pipeMiddleware(req, res, [
-        [m1, { matcher: (path) => path === '/foo' }],
-        [m2, { matcher: (path) => path === '/bar' }],
-        m3,
-      ])
+      await pipeMiddleware(
+        req,
+        res,
+        [
+          [m1, { matcher: (req) => req.nextUrl.pathname === '/foo' }],
+          [m2, { matcher: (req) => req.nextUrl.pathname === '/bar' }],
+          m3,
+        ],
+        stateHandler
+      )
     ).toEqual({
-      bar: 'bar',
-      baz: 'baz',
+      m2: 'm2',
+      m3: 'm3',
     });
   });
 });

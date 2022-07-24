@@ -20,6 +20,9 @@ describe('nestMiddleware', () => {
     expect(
       await nestMiddleware(req, res, {
         scripts: [m1, m2, m3],
+        nest: {
+          scripts: [m3],
+        },
       })
     ).toEqual({
       foo: 'foo',
@@ -28,6 +31,6 @@ describe('nestMiddleware', () => {
     });
     expect(m1).toHaveBeenCalledOnce();
     expect(m2).toHaveBeenCalledOnce();
-    expect(m3).toHaveBeenCalledOnce();
+    expect(m3).toHaveBeenCalledTimes(2);
   });
 });
