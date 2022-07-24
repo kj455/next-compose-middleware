@@ -14,102 +14,83 @@ Next.js v12.2.0+ (Middleware support)
 ## 🐈 Usage
 
 ### Basic
-Pass NextRequest, NextResponse, and arrays of multiple middleware to `pipeMiddleware` function.
-
 ```ts
 export default async function middleware(req: NextRequest) {
-  return pipeMiddleware(req, NextResponse.next(), [
-    fooMiddleware,
-    barMiddleware,
-    hogeMiddleware,
-  ])
+  /**
+   * Path                : Middleware execution order
+   * 
+   * `/`                 : root1 -> root2
+   * `/foo`              : root1 -> root2 -> foo
+   * `/foo/bar/hoge`     : root1 -> root2 -> foo -> fooBar
+   * `/foo/bar/xxxx/baz` : root1 -> root2 -> foo -> fooId -> fooIdBaz
+   */
+  return composeMiddleware(req, NextResponse.next(), {
+    scripts: [root1, root2],
+    '/foo': {
+      scripts: [foo],
+      '/bar': {
+        scripts: [fooBar], 
+      },
+      '/[id]': {
+        scripts: [fooId],
+        '/baz': [fooIdBaz]path
+      },
+
+      // ↓ Either writing method will work, but if you want to nest more, you have to write it in the Object
+      '/qux': [fooQux]
+      '/qux': {
+        scripts: [fooQux]
+      }
+    }
+  })
 }
 ```
 
-Each middleware function (`PipeableMiddleware`) differs from the Next.js middleware functions only in that it takes a NextResponse as its second argument:
+Each middleware function is a `ComposableMiddleware` function.
+This is almost identical to the Next.js middleware, differing only in that it takes additional arguments.
 
 ```ts
-const fooMiddleware: PipeableMiddleware = async (req, res) => {
-  res.cookies.set('foo', 'bar')
+/**
+ * type ComposableMiddleware = (
+ *   req: NextRequest,
+ *   res: NextResponse,
+ *   handler?: {...} // explained at next section
+ * ) => Promise<Response>;
+ */
+const fooMiddleware: ComposableMiddleware = async (req, res) => {
+  res.cookies.set('foo', 'foo')
   return res;
 };
 ```
 
-### Conditional middleware
-If you want to control execution of middleware according to the page path, pass an object containing a matcher function as the second element of the tuple
+
+### Early Exit
+If you want to abort whole process at a particular middleware without executing subsequent functions, use a handler that is given from third argument.
 
 ```ts
-export default async function middleware(req: NextRequest) {
-  return pipeMiddleware(req, NextResponse.next(), [
-    basicAuthMiddleware,
-    [redirectMiddleware, {matcher: (path) => path.startsWith('/secret')}],
-    [refreshTokenMiddleware, {matcher: (path) => path.startsWith('/my')}],
-  ])
-}
-```
-
-### Terminable middleware
-If you want to terminate the entire process on a particular piece of middleware (i.e., you do not want subsequent pieces of middleware to run), change the response format as follows
-
-```ts
-const basicAuth: PipeableMiddleware = async (req, res) => {
-  const success = validateBasicAuth(req);
+const basicAuth: PipeableMiddleware = async (req, res, { breakAll, breakOnce }) => {
+  const success = validateBasicAuth(req); // returns boolean
   if (success) {
     return res;
   } else {
-    return {
-      res: NextResponse.rewrite(/**/),
-      final: true,
-    }; // terminate process after this middleware by returning object with `final: true` and `res`
+    return breakAll(res); // All subsequent middleware (`refreshToken`, `foo` and others) will not be executed !!
+
+    // or
+    return breakOnce(res); //　Only subsequent middleware in the same hierarchy (`refreshToken`) will not be executed (`foo` will be executed).
   }
 };
 
 export default async function middleware(req: NextRequest) {
-  return pipeMiddleware(req, NextResponse.next(), [
-    basicAuthMiddleware, // if basic auth failed, the process ends here.
-    redirectMiddleware,
-    refreshTokenMiddleware
-  ])
+  return composeMiddleware(req, NextResponse.next(), {
+    scripts: [basicAuth, refreshToken],
+    '/foo': {
+      scripts: [foo],
+      ...
+    }
+  })
 }
 ```
 
 
 ## 📖 Appendix
-
 [Demo](https://codesandbox.io/s/next-pipe-middleware-w9rvlh?file=/middleware.ts)
-
-<details>
-<summary>Motivation</summary>
-
-If you want to implement the following at the middleware file:
-- Applying Basic-auth, if it fails, **terminates** at that point.
-- If user access to specific page, redirect and **terminates** at that point.
-- Refresh the authentication token.
-
-Without this library, you would have to write codes like this:
-```ts
-export default async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
-  const success = await basicAuthMiddleware(req, res);
-  if (!success) {
-    return NextResponse.rewrite(new URL('/api/basic-auth', req.url))
-  }
-
-  if (req.url.startsWith('/secret')) {
-    const [shouldRedirect, redirectRes] = await redirectMiddleware(req, res);
-    if (shouldRedirect) {
-      return redirectRes;
-    }
-  }
-
-  if (req.url.startsWith('/my')) {
-    await refreshTokenMiddleware(req, res);
-  }
-  return res;
-}
-```
-
-It is difficult to know what kind of process the middleware consists of, because it is necessary to check whether the process should be terminated depending on the response, or whether it should be executed according to the path, etc.
-
-This library allows you to write what you want to do declaratively and readably as above.
-</details>
