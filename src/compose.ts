@@ -17,7 +17,7 @@ export type ComposeOption = {
 export type ComposableMiddleware = (
   req: Request,
   res: Response,
-  handler?: {
+  handler: {
     breakOnce: (res: Response) => Response;
     breakAll: (res: Response) => Response;
   }
