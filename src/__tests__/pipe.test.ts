@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { pipeMiddleware, Request as FooRequest } from '../index';
+import { pipe } from '../pipe';
 import { stateHandler } from '../state';
+import { Request, Response } from '../types';
 
 const m1 = vi.fn(async (req, res) => {
   return { ...res, m1: 'm1' };
@@ -13,7 +13,8 @@ const m3 = vi.fn(async (req, res) => {
   return { ...res, m3: 'm3' };
 });
 const mFinal = vi.fn(async (req, res, { breakOnce }) => {
-  return breakOnce();
+  breakOnce();
+  return res;
 });
 
 describe('pipe', async () => {
@@ -23,10 +24,10 @@ describe('pipe', async () => {
   });
 
   it('should execute piped middlewares', async () => {
-    const req = {} as FooRequest;
-    const res = {} as NextResponse;
+    const req = {} as Request;
+    const res = {} as Response;
 
-    expect(await pipeMiddleware(req, res, [m1, m2, m3], stateHandler)).toEqual({
+    expect(await pipe(req, res, [m1, m2, m3], stateHandler)).toEqual({
       m1: 'm1',
       m2: 'm2',
       m3: 'm3',
@@ -36,24 +37,22 @@ describe('pipe', async () => {
     expect(m3).toHaveBeenCalledOnce();
   });
 
-  it('should terminate if undefined returned', async () => {
-    const req = {} as FooRequest;
-    const res = {} as NextResponse;
+  it('should terminate if `breakOnce` or `breakALl` is true', async () => {
+    const req = {} as Request;
+    const res = {} as Response;
 
-    expect(
-      await pipeMiddleware(req, res, [m1, m2, mFinal, m3], stateHandler)
-    ).toEqual({
+    expect(await pipe(req, res, [m1, m2, mFinal, m3], stateHandler)).toEqual({
       m1: 'm1',
       m2: 'm2',
     });
   });
 
   it('should not execute middleware with unmatched path', async () => {
-    const req = { nextUrl: { pathname: '/bar' } } as FooRequest;
-    const res = {} as NextResponse;
+    const req = { nextUrl: { pathname: '/bar' } } as Request;
+    const res = {} as Response;
 
     expect(
-      await pipeMiddleware(
+      await pipe(
         req,
         res,
         [

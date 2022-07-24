@@ -1,18 +1,24 @@
 import { StateHandler, stateHandler } from './state';
 import { Request, Response } from './types';
 
-export type PipeableMiddleware = (
+export type PipeMiddleware = (
   req: Request,
   res: Response,
-  handler?: {
-    breakOnce: () => void;
-    breakAll: () => void;
-  }
-) => Promise<Response | undefined>;
+  middlewares: (PipeableMiddleware | [PipeableMiddleware, Option])[]
+) => Promise<Response>;
 
 type Option = {
   matcher?: (req: Request) => boolean | Promise<boolean>;
 };
+
+export type PipeableMiddleware = (
+  req: Request,
+  res: Response,
+  handler?: {
+    breakOnce: (res: Response) => Response;
+    breakAll: (res: Response) => Response;
+  }
+) => Promise<Response>;
 
 type Pipe = (
   req: Request,
@@ -21,7 +27,7 @@ type Pipe = (
   stateHandler: StateHandler
 ) => Promise<Response>;
 
-export const pipe: Pipe = async (req, res, middlewares, stateHandler) => {
+export const pipe: Pipe = async (req, res, middlewares, handler) => {
   if (middlewares.length === 0) {
     return res;
   }
@@ -30,34 +36,28 @@ export const pipe: Pipe = async (req, res, middlewares, stateHandler) => {
     typeof next === 'function' ? [next, null] : [next[0], next[1]];
 
   if (option?.matcher && !option.matcher(req)) {
-    return pipe(req, res, rest, stateHandler);
+    return pipe(req, res, rest, handler);
   }
 
-  const { getState, dispatch } = stateHandler;
+  const { getState, dispatch } = handler;
   const result = await middleware(req, res, {
-    breakOnce: () => dispatch('breakOnce'),
-    breakAll: () => dispatch('breakAll'),
+    breakOnce: (res) => {
+      dispatch('breakOnce');
+      return res;
+    },
+    breakAll: () => {
+      dispatch('breakAll');
+      return res;
+    },
   });
 
-  if (getState().brokenOnce) {
-    return res;
-  }
-  if (result === undefined) {
-    throw new Error(
-      'Pipeable middleware should return a response if you want to continue the pipeline.'
-    );
+  const { brokenOnce, brokenAll } = getState();
+  if (brokenOnce || brokenAll) {
+    return result;
   }
 
-  // before continuing, we need to reset the brokenOnce state
-  dispatch('reset');
-  return pipe(req, result, rest, stateHandler);
+  return pipe(req, result, rest, handler);
 };
-
-type PipeMiddleware = (
-  req: Request,
-  res: Response,
-  middlewares: (PipeableMiddleware | [PipeableMiddleware, Option])[]
-) => Promise<Response>;
 
 export const pipeMiddleware: PipeMiddleware = (req, res, middlewares) =>
   pipe(req, res, middlewares, stateHandler);

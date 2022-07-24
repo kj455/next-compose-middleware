@@ -1,37 +1,44 @@
-import { PipeableMiddleware } from './pipe';
+import { pipe, PipeableMiddleware } from './pipe';
+import { stateHandler, StateHandler } from './state';
 import { Request, Response } from './types';
 
-type NestOpition = {
-  scripts: PipeableMiddleware[];
-  matcher?: (path: string) => boolean | Promise<boolean>;
-  nest?: NestOpition;
-};
-
-type NestMiddleware = (
+export type NestMiddleware = (
   req: Request,
   res: Response,
   option: NestOpition
 ) => Promise<Response>;
 
-export const nestMiddleware: NestMiddleware = async (req, res, option) => {
-  const { scripts, matcher, nest } = option;
-  const { nextUrl } = req;
-  if (matcher && !matcher(nextUrl.pathname)) {
+type Nest = (
+  req: Request,
+  res: Response,
+  option: NestOpition,
+  stateHandler: StateHandler
+) => Promise<Response>;
+
+type NestOpition = {
+  scripts: PipeableMiddleware[];
+  matcher?: (req: Request) => boolean | Promise<boolean>;
+  next?: NestOpition;
+};
+
+export const nest: Nest = async (req, res, option, handler) => {
+  const { scripts, matcher, next } = option;
+
+  if (matcher && !matcher(req)) {
     return res;
   }
 
-  let lastRes = res;
-  for (const script of scripts) {
-    const result = await script(req, lastRes);
-    if (!result) {
-      return res;
-    }
-    lastRes = result;
+  const result = await pipe(req, res, scripts, handler);
+  const { brokenAll } = handler.getState();
+
+  if (brokenAll) {
+    return result;
   }
 
-  if (nest) {
-    return nestMiddleware(req, lastRes, nest);
-  }
+  handler.dispatch('reset');
+  return next ? nest(req, result, next, handler) : result;
+};
 
-  return lastRes;
+export const nestMiddleware: NestMiddleware = (req, res, option) => {
+  return nest(req, res, option, stateHandler);
 };
