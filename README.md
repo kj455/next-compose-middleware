@@ -1,13 +1,12 @@
 # 🧵 Next Pipe Middleware
 
-This is a library for building Next.js middleware declaratively.
-You can create highly readable and manageable middleware by piping multiple functions together.
+This is a library for building Next.js complex middleware declaratively.
+You can create highly readable and manageable middleware by composing multiple functions together.
 
 
 ## 🌟 Features
-- Multiple middleware executions in series
-- Conditional execution of middleware
-- Middleware processes that can be terminated midstream
+- Path-based middleware execution (like "Nested Middleware")
+- Composition of functions divided by interest (including early exit)
 
 ## 🔏 Requirements
 Next.js v12.2.0+ (Middleware support)

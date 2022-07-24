@@ -49,9 +49,32 @@ export const toPath = (path: string): Path => {
   return path.startsWith('/') ? (path as Path) : `/${path}`;
 };
 
+export const isDynamicPath = (path: string): boolean => {
+  const dynamicPathregex = /^\/\[\w+\]$/;
+  return dynamicPathregex.test(path);
+};
+
+export const findPathValue = (
+  pathMap: Omit<ComposeOption, 'scripts'>,
+  path: Path
+): Middleware[] | ComposeOption | null => {
+  const value = pathMap[path];
+  if (value) {
+    return value;
+  }
+
+  const found = Object.keys(pathMap).find((key) => isDynamicPath(key));
+  const dynamicPath = found ? toPath(found) : null;
+
+  if (dynamicPath === null) {
+    return null;
+  }
+  return pathMap[dynamicPath] ?? null;
+};
+
 export const composeMain: Compose = async (req, res, option, handler) => {
   const { getState, dispatch } = handler;
-  const { scripts, ...paths } = option;
+  const { scripts, ...pathMap } = option;
 
   const result = await pipe(req, res, scripts, handler);
 
@@ -60,23 +83,23 @@ export const composeMain: Compose = async (req, res, option, handler) => {
     return result;
   }
 
-  const [next, ...restPath] = path;
-  if (next === undefined) {
+  const [nextPath, ...restPath] = path;
+  if (nextPath === undefined) {
     return result;
   }
 
-  const nextValue = paths[toPath(next)];
-  if (nextValue === undefined) {
+  const nextValue = findPathValue(pathMap, toPath(nextPath));
+  if (nextValue === null) {
     return result;
   }
 
-  const isComposeOption = !('length' in nextValue);
-  if (isComposeOption) {
-    dispatch({ type: 'setPath', payload: restPath });
-    return composeMain(req, result, nextValue, handler);
+  const isMiddlewareArray = 'length' in nextValue;
+  if (isMiddlewareArray) {
+    return pipe(req, res, nextValue, handler);
   }
 
-  return pipe(req, result, nextValue, handler);
+  dispatch({ type: 'setPath', payload: restPath });
+  return composeMain(req, result, nextValue, handler);
 };
 
 export const compose: Compose = async (req, res, option, handler) => {

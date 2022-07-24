@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { compose, getPathList, toPath } from '../compose';
+import {
+  compose,
+  findPathValue,
+  getPathList,
+  isDynamicPath,
+  toPath,
+} from '../compose';
 import {
   m1,
   m2,
@@ -36,6 +42,28 @@ describe('toPath', () => {
   });
 });
 
+describe('isDynamicPath', () => {
+  test.each([
+    ['/', false],
+    ['/foo', false],
+    ['/[id]', true],
+    ['/[fooBar]', true],
+  ])('isDynamicPath(%s)', (pathname, expected) => {
+    expect(isDynamicPath(pathname)).toEqual(expected);
+  });
+});
+
+describe('findPathValue', () => {
+  test.each([
+    [{ '/foo': [], '/bar': {} }, '/foo', []],
+    [{ '/foo': [], '/bar': {} }, '/baz', null],
+    [{ '/[id]': [], '/bar': {} }, '/qux', []],
+  ])('findPathValue(%s)', (pathMap, path, expected) => {
+    // @ts-expect-error
+    expect(findPathValue(pathMap, path)).toEqual(expected);
+  });
+});
+
 describe('composeMiddleware', () => {
   beforeEach(() => {
     stateHandler.dispatch({ type: 'reset' });
@@ -54,9 +82,11 @@ describe('composeMiddleware', () => {
           scripts: [m1, [m2, { matcher: (req) => false }], m3],
           '/foo': {
             scripts: [m4],
-            '/bar': {
+            '/[id]': {
               scripts: [m5],
-              '/baz': [m6],
+              '/baz': {
+                scripts: [m6],
+              },
             },
           },
           '/bar': [m7],
