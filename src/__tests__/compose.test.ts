@@ -1,8 +1,18 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { compose, getPathList, toPath } from '../compose';
+import {
+  m1,
+  m2,
+  m3,
+  m4,
+  m5,
+  m6,
+  m7,
+  mBreakAll,
+  mBreakOnce,
+} from '../mocks/middleware';
 import { stateHandler } from '../state';
 import { Request, Response } from '../types';
-import { m1, m2, m3, m4, m5, m6, m7, mBreakAll, mBreakOnce } from './mock';
 
 describe('getPathList', () => {
   test.each([
@@ -33,7 +43,7 @@ describe('composeMiddleware', () => {
   });
 
   test('should execute all scripts with matched path', async () => {
-    const req = { nextUrl: { pathname: '/foo/bar/baz' } } as Request;
+    const req = { nextUrl: { pathname: '/foo/bar/baz/qux' } } as Request;
     const res = {} as Response;
 
     expect(
@@ -46,10 +56,10 @@ describe('composeMiddleware', () => {
             scripts: [m4],
             '/bar': {
               scripts: [m5],
-              '/baz': m6,
+              '/baz': [m6],
             },
           },
-          '/bar': m7,
+          '/bar': [m7],
         },
         stateHandler
       )
@@ -82,7 +92,7 @@ describe('composeMiddleware', () => {
           '/foo': {
             scripts: [m3],
           },
-          '/bar': m4,
+          '/bar': [m4],
         },
         stateHandler
       )
@@ -95,7 +105,7 @@ describe('composeMiddleware', () => {
     expect(m3).toHaveBeenCalledTimes(1);
   });
 
-  test('should skip remaining scripts if `brokenAll` is true', async () => {
+  test('should skip all remaining scripts if `brokenAll` is true', async () => {
     const req = { nextUrl: { pathname: '/foo/bar/baz' } } as Request;
     const res = {} as Response;
 
@@ -108,7 +118,7 @@ describe('composeMiddleware', () => {
           '/foo': {
             scripts: [m3],
           },
-          '/bar': m4,
+          '/bar': [m4],
         },
         stateHandler
       )

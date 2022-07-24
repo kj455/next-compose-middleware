@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { m1, m2, m3, mBreakOnce } from '../mocks/middleware';
 import { pipe } from '../pipe';
 import { stateHandler } from '../state';
 import { Request, Response } from '../types';
-import { m1, m2, m3, mBreakOnce } from './mock';
 
 describe('pipe', async () => {
   beforeEach(() => {
@@ -24,7 +24,7 @@ describe('pipe', async () => {
     expect(m3).toHaveBeenCalledOnce();
   });
 
-  it('should terminate if `breakOnce` or `breakALl` is true', async () => {
+  it('should terminate if `breakOnce` or `breakAll` is true', async () => {
     const req = {} as Request;
     const res = {} as Response;
 

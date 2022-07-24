@@ -1,25 +1,40 @@
-import { MiddlewareArgType, pipe } from './pipe';
+import { pipe } from './pipe';
 import { stateHandler, StateHandler } from './state';
 import { Request, Response } from './types';
 
-export type ComposeMiddleware = (
+type ComposeMiddleware = (
   req: Request,
   res: Response,
-  option: ComposeOpition
+  option: ComposeOption
 ) => Promise<Response>;
+
+type ComposeOption = {
+  scripts: Middleware[];
+  [path: Path]: Middleware[] | ComposeOption;
+};
+
+export type Middleware = ComposableMiddleware | [ComposableMiddleware, Option];
+
+export type ComposableMiddleware = (
+  req: Request,
+  res: Response,
+  handler?: {
+    breakOnce: (res: Response) => Response;
+    breakAll: (res: Response) => Response;
+  }
+) => Promise<Response>;
+type Option = {
+  matcher?: (req: Request) => boolean | Promise<boolean>;
+};
 
 type Compose = (
   req: Request,
   res: Response,
-  option: ComposeOpition,
+  option: ComposeOption,
   stateHandler: StateHandler
 ) => Promise<Response>;
 
 type Path = `/${string}`;
-type ComposeOpition = {
-  scripts: MiddlewareArgType[];
-  [path: Path]: MiddlewareArgType | ComposeOpition;
-};
 
 export const getPathList = (path: string): string[] => {
   const exceptHeadEmpty = path.split('/').slice(1);
@@ -55,13 +70,13 @@ export const composeMain: Compose = async (req, res, option, handler) => {
     return result;
   }
 
-  const isOption = typeof nextValue !== 'function' && !('length' in nextValue);
-  if (isOption) {
+  const isComposeOption = !('length' in nextValue);
+  if (isComposeOption) {
     dispatch({ type: 'setPath', payload: restPath });
     return composeMain(req, result, nextValue, handler);
   }
 
-  return pipe(req, result, [nextValue], handler);
+  return pipe(req, result, nextValue, handler);
 };
 
 export const compose: Compose = async (req, res, option, handler) => {

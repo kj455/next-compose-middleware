@@ -26,7 +26,6 @@ type Action =
   | {
       type: 'reset';
     };
-// type Action = 'setPath' | 'breakOnce' | 'breakAll' | 'reset';
 
 export const reducer = (state = initialState, action: Action) => {
   switch (action.type) {

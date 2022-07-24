@@ -1,41 +1,25 @@
+import type { Middleware } from './compose';
 import { StateHandler, stateHandler } from './state';
 import { Request, Response } from './types';
-
-export type MiddlewareArgType =
-  | PipeableMiddleware
-  | [PipeableMiddleware, Option];
 
 export type PipeMiddleware = (
   req: Request,
   res: Response,
-  middlewares: MiddlewareArgType[]
-) => Promise<Response>;
-
-type Option = {
-  matcher?: (req: Request) => boolean | Promise<boolean>;
-};
-
-export type PipeableMiddleware = (
-  req: Request,
-  res: Response,
-  handler?: {
-    breakOnce: (res: Response) => Response;
-    breakAll: (res: Response) => Response;
-  }
+  middlewares: Middleware[]
 ) => Promise<Response>;
 
 type Pipe = (
   req: Request,
   res: Response,
-  middlewares: MiddlewareArgType[],
+  middlewares: Middleware[],
   stateHandler: StateHandler
 ) => Promise<Response>;
 
 export const pipe: Pipe = async (req, res, middlewares, handler) => {
-  if (middlewares.length === 0) {
+  const [next, ...rest] = middlewares;
+  if (next === undefined) {
     return res;
   }
-  const [next, ...rest] = middlewares;
   const [middleware, option] =
     typeof next === 'function' ? [next, null] : [next[0], next[1]];
 
