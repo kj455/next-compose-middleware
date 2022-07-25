@@ -32,7 +32,7 @@ export default async function middleware(req: NextRequest) {
       },
       '/[id]': {
         scripts: [fooId],
-        '/baz': [fooIdBaz]path
+        '/baz': [fooIdBaz]
       },
 
       // ↓ Either writing method will work, but if you want to nest more, you have to write it in the Object
