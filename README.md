@@ -67,7 +67,7 @@ const fooMiddleware: ComposableMiddleware = async (req, res) => {
 If you want to abort whole process at a particular middleware without executing subsequent functions, use a handler that is given from third argument.
 
 ```ts
-const basicAuth: PipeableMiddleware = async (req, res, { breakAll, breakOnce }) => {
+const basicAuth: ComposableMiddleware = async (req, res, { breakAll, breakOnce }) => {
   const success = validateBasicAuth(req); // returns boolean
   if (success) {
     return res;
