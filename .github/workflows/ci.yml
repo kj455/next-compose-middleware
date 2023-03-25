@@ -1,0 +1,60 @@
+name: CI
+
+on: push
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        
+      - uses: pnpm/action-setup@v2
+
+      - name: setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: 'pnpm'
+
+      - name: install deps
+        run: pnpm install
+
+  typecheck:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v3
+        
+      - uses: pnpm/action-setup@v2
+
+      - name: setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: 'pnpm'
+
+      - name: install deps
+        run: pnpm install
+
+      - name: typecheck
+        run: pnpm typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v3
+        
+      - uses: pnpm/action-setup@v2
+
+      - name: setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: 'pnpm'
+
+      - name: install deps
+        run: pnpm install
+
+      - name: test
+        run: pnpm test

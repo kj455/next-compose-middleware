@@ -7,7 +7,7 @@
   "scripts": {
     "build": "rm -rf dist && tsc",
     "test": "vitest",
-    "type-check": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "prepublishOnly": "yarn build"
   },
   "files": [
@@ -25,6 +25,7 @@
     "middleware",
     "edge"
   ],
+  "packageManager": "pnpm@7.30.3",
   "license": "MIT",
   "dependencies": {}
 }
