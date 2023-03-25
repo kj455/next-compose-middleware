@@ -1,7 +1,7 @@
 # 🧵 Next Compose Middleware
 
-This is a library for building Next.js complex middleware declaratively.
-You can create highly readable and manageable middleware by composing multiple functions together.
+`next-compose-middleware` is a library that simplifies building complex, declarative middleware for Next.js applications. It allows you to create highly readable and maintainable middleware by composing multiple functions together.
+
 
 ## 🌟 Features
 - Path-based middleware execution (like "Nested Middleware")
@@ -9,6 +9,16 @@ You can create highly readable and manageable middleware by composing multiple f
 
 ## 🔏 Requirements
 Next.js v12.2.0+ (Middleware support)
+
+## 🚀 Installation
+
+```sh
+npm install next-compose-middleware
+# or
+yarn add next-compose-middleware
+# or
+pnpm add next-compose-middleware
+```
 
 ## 🐈 Usage
 
@@ -46,7 +56,7 @@ export default async function middleware(req: NextRequest) {
 ```
 
 Each middleware function is a `ComposableMiddleware` function.
-This is almost identical to the Next.js middleware, differing only in that it takes additional arguments.
+It is almost identical to the Next.js middleware, except for additional arguments.
 
 ```ts
 /**
@@ -64,7 +74,7 @@ const fooMiddleware: ComposableMiddleware = async (req, res) => {
 
 
 ### Early Exit
-If you want to abort whole process at a particular middleware without executing subsequent functions, use a handler that is given from third argument.
+To abort the process at a specific middleware without executing subsequent functions, use the breakAll or breakOnce handler from the third argument.
 
 ```ts
 const basicAuth: ComposableMiddleware = async (req, res, { breakAll, breakOnce }) => {
@@ -72,10 +82,10 @@ const basicAuth: ComposableMiddleware = async (req, res, { breakAll, breakOnce }
   if (success) {
     return res;
   } else {
-    return breakAll(res); // All subsequent middleware (`refreshToken`, `foo` and others) will not be executed !!
+    return breakAll(res); // All subsequent middleware (e.g., refreshToken, foo, etc.) will not be executed.
 
     // or
-    return breakOnce(res); //　Only subsequent middleware in the same hierarchy (`refreshToken`) will not be executed (`foo` will be executed).
+    return breakOnce(res); // Only subsequent middleware in the same hierarchy (e.g., refreshToken) will not be executed (foo will be executed).
   }
 };
 
