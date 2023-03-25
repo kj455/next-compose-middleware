@@ -5,15 +5,21 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "pnpm -r build",
-    "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck",
-    "prepublishOnly": "pnpm build"
+    "build": "rm -rf ../dist && tsc",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "yarn build"
   },
   "files": [
     "dist",
     "!dist/mocks"
   ],
+  "devDependencies": {
+    "next": "^12.2.2",
+    "typescript": "^4.6.4",
+    "vite": "^3.0.0",
+    "vitest": "^0.18.1"
+  },
   "keywords": [
     "next.js",
     "middleware",
