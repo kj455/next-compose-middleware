@@ -1,0 +1,22 @@
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  align-items: center;
+  padding: 4rem 2rem;
+  min-height: 100vh;
+}
+
+.title {
+  text-align: center;
+  font-size: 1.5rem;
+  max-width: var(--max-width);
+  width: 100%;
+  font-family: var(--font-mono);
+}
+
+.code {
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+

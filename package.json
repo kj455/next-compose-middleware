@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "pnpm -r build",
+    "build": "pnpm -C lib build",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "prepublishOnly": "pnpm build"
