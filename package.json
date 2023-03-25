@@ -1,6 +1,6 @@
 {
   "name": "next-compose-middleware",
-  "version": "2.0.6",
+  "version": "2.1.0-development",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -8,7 +8,8 @@
     "build": "pnpm -C lib build",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build",
+    "semantic-release": "semantic-release"
   },
   "files": [
     "dist",
@@ -21,5 +22,11 @@
   ],
   "packageManager": "pnpm@7.30.3",
   "license": "MIT",
-  "dependencies": {}
+  "devDependencies": {
+    "semantic-release": "^21.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kj455/next-compose-middleware.git"
+  }
 }
